@@ -76,7 +76,7 @@ export default function WasmEditor() {
     wasmModule.HEAPU8.set(data, dataPtr);
     wasmModule._grayscale(dataPtr, canvas.width, canvas.height);
 
-    // Create a copy of the Wasm memory segment
+    // Create a copy of the Wasm memory segment to fix the type error
     const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
@@ -94,9 +94,9 @@ export default function WasmEditor() {
     const data = imageData.data;
     const dataPtr = wasmModule._malloc(data.length);
     wasmModule.HEAPU8.set(data, dataPtr);
-    wasmModule._sepia(dataPtr, canvas.width, canvas.height); // Call the new sepia function
+    wasmModule._sepia(dataPtr, canvas.width, canvas.height);
     
-    // Create a copy of the Wasm memory segment
+    // Create a copy of the Wasm memory segment to fix the type error
     const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
