@@ -1,9 +1,8 @@
-// In frontend/src/app/components/WasmEditor.tsx
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 
-// 1. Add _sepia to the interface
+// The interface now includes the _sepia function
 interface WasmModule {
   _grayscale: (dataPtr: number, width: number, height: number) => void;
   _sepia: (dataPtr: number, width: number, height: number) => void;
@@ -12,7 +11,6 @@ interface WasmModule {
   HEAPU8: Uint8ClampedArray;
 }
 
-// ... (rest of the declarations)
 declare global {
   interface Window {
     Module?: Promise<WasmModule>;
@@ -26,7 +24,6 @@ export default function WasmEditor() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImageData = useRef<ImageData | null>(null);
 
-  // ... (useEffect and handleImageUpload remain the same)
   useEffect(() => {
     const initializeWasm = async () => {
       if (window.Module) {
@@ -56,7 +53,7 @@ export default function WasmEditor() {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0);
-            // Store the original image data
+            // Store the original image data to allow resetting
             originalImageData.current = ctx?.getImageData(0, 0, img.width, img.height) ?? null;
           }
         };
@@ -68,7 +65,6 @@ export default function WasmEditor() {
 
 
   const applyGrayscale = () => {
-    // ... (this function remains the same)
     if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -79,25 +75,32 @@ export default function WasmEditor() {
     const dataPtr = wasmModule._malloc(data.length);
     wasmModule.HEAPU8.set(data, dataPtr);
     wasmModule._grayscale(dataPtr, canvas.width, canvas.height);
-    const result = new Uint8ClampedArray(wasmModule.HEAPU8.buffer, dataPtr, data.length);
-    ctx.putImageData(new ImageData(result, canvas.width, canvas.height), 0, 0);
+
+    // Create a copy of the Wasm memory segment
+    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
+    ctx.putImageData(resultImageData, 0, 0);
+
     wasmModule._free(dataPtr);
   };
 
-  // 2. Add the new applySepia function
   const applySepia = () => {
     if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.putImageData(originalImageData.current, 0, 0); // Reset to original before applying
+    ctx.putImageData(originalImageData.current, 0, 0); // Reset to original
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
     const dataPtr = wasmModule._malloc(data.length);
     wasmModule.HEAPU8.set(data, dataPtr);
-    wasmModule._sepia(dataPtr, canvas.width, canvas.height); // Call the sepia function
-    const result = new Uint8ClampedArray(wasmModule.HEAPU8.buffer, dataPtr, data.length);
-    ctx.putImageData(new ImageData(result, canvas.width, canvas.height), 0, 0);
+    wasmModule._sepia(dataPtr, canvas.width, canvas.height); // Call the new sepia function
+    
+    // Create a copy of the Wasm memory segment
+    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
+    ctx.putImageData(resultImageData, 0, 0);
+
     wasmModule._free(dataPtr);
   };
 
@@ -111,7 +114,6 @@ export default function WasmEditor() {
       <canvas ref={canvasRef} className="w-full h-auto rounded bg-slate-900"></canvas>
 
       {image && (
-        // 3. Add the new button
         <div className="mt-4 grid grid-cols-2 gap-4">
           <button onClick={applyGrayscale} disabled={!wasmModule} className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded disabled:bg-slate-500">
             {wasmModule ? 'Grayscale' : 'Loading Wasm...'}
