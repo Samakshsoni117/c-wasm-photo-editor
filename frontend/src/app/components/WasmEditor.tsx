@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 
 // The interface now includes the _sepia function
-interface WasmModule {
+interface W-module {
   _grayscale: (dataPtr: number, width: number, height: number) => void;
   _sepia: (dataPtr: number, width: number, height: number) => void;
   _malloc: (size: number) => number;
@@ -13,13 +13,13 @@ interface WasmModule {
 
 declare global {
   interface Window {
-    Module?: Promise<WasmModule>;
+    Module?: Promise<W-module>;
   }
 }
 
 
-export default function WasmEditor() {
-  const [wasmModule, setWasmModule] = useState<WasmModule | null>(null);
+export default function W-editor() {
+  const [w-module, setW-module] = useState<W-module | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImageData = useRef<ImageData | null>(null);
@@ -28,7 +28,7 @@ export default function WasmEditor() {
     const initializeWasm = async () => {
       if (window.Module) {
         const loadedModule = await window.Module;
-        setWasmModule(loadedModule);
+        setW-module(loadedModule);
       }
     };
     const interval = setInterval(() => {
@@ -65,43 +65,43 @@ export default function WasmEditor() {
 
 
   const applyGrayscale = () => {
-    if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
+    if (!w-module || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(originalImageData.current, 0, 0); // Reset to original
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const dataPtr = wasmModule._malloc(data.length);
-    wasmModule.HEAPU8.set(data, dataPtr);
-    wasmModule._grayscale(dataPtr, canvas.width, canvas.height);
+    const dataPtr = w-module._malloc(data.length);
+    w-module.HEAPU8.set(data, dataPtr);
+    w-module._grayscale(dataPtr, canvas.width, canvas.height);
 
     // Create a copy of the Wasm memory segment to fix the type error
-    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const resultData = new Uint8ClampedArray(w-module.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
 
-    wasmModule._free(dataPtr);
+    w-module._free(dataPtr);
   };
 
   const applySepia = () => {
-    if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
+    if (!w-module || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.putImageData(originalImageData.current, 0, 0); // Reset to original
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const dataPtr = wasmModule._malloc(data.length);
-    wasmModule.HEAPU8.set(data, dataPtr);
-    wasmModule._sepia(dataPtr, canvas.width, canvas.height);
+    const dataPtr = w-module._malloc(data.length);
+    w-module.HEAPU8.set(data, dataPtr);
+    w-module._sepia(dataPtr, canvas.width, canvas.height);
     
     // Create a copy of the Wasm memory segment to fix the type error
-    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const resultData = new Uint8ClampedArray(w-module.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
 
-    wasmModule._free(dataPtr);
+    w-module._free(dataPtr);
   };
 
 
@@ -115,11 +115,11 @@ export default function WasmEditor() {
 
       {image && (
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <button onClick={applyGrayscale} disabled={!wasmModule} className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded disabled:bg-slate-500">
-            {wasmModule ? 'Grayscale' : 'Loading Wasm...'}
+          <button onClick={applyGrayscale} disabled={!w-module} className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded disabled:bg-slate-500">
+            {w-module ? 'Grayscale' : 'Loading Wasm...'}
           </button>
-          <button onClick={applySepia} disabled={!wasmModule} className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded disabled:bg-slate-500">
-            {wasmModule ? 'Sepia' : 'Loading Wasm...'}
+          <button onClick={applySepia} disabled={!w-module} className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded disabled:bg-slate-500">
+            {w-module ? 'Sepia' : 'Loading Wasm...'}
           </button>
         </div>
       )}
