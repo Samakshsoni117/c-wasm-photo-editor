@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 
-// The interface now includes the _sepia function
-interface W-module {
+// The interface for our WebAssembly module
+interface WasmModule {
   _grayscale: (dataPtr: number, width: number, height: number) => void;
   _sepia: (dataPtr: number, width: number, height: number) => void;
   _malloc: (size: number) => number;
@@ -13,13 +13,12 @@ interface W-module {
 
 declare global {
   interface Window {
-    Module?: Promise<W-module>;
+    Module?: Promise<WasmModule>;
   }
 }
 
-
-export default function W-editor() {
-  const [w-module, setW-module] = useState<W-module | null>(null);
+export default function WasmEditor() {
+  const [wasmModule, setWasmModule] = useState<WasmModule | null>(null);
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImageData = useRef<ImageData | null>(null);
@@ -28,7 +27,7 @@ export default function W-editor() {
     const initializeWasm = async () => {
       if (window.Module) {
         const loadedModule = await window.Module;
-        setW-module(loadedModule);
+        setWasmModule(loadedModule);
       }
     };
     const interval = setInterval(() => {
@@ -53,7 +52,6 @@ export default function W-editor() {
             canvas.height = img.height;
             const ctx = canvas.getContext('2d');
             ctx?.drawImage(img, 0, 0);
-            // Store the original image data to allow resetting
             originalImageData.current = ctx?.getImageData(0, 0, img.width, img.height) ?? null;
           }
         };
@@ -63,47 +61,39 @@ export default function W-editor() {
     }
   };
 
-
   const applyGrayscale = () => {
-    if (!w-module || !canvasRef.current || !originalImageData.current) return;
+    if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.putImageData(originalImageData.current, 0, 0); // Reset to original
+    ctx.putImageData(originalImageData.current, 0, 0);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const dataPtr = w-module._malloc(data.length);
-    w-module.HEAPU8.set(data, dataPtr);
-    w-module._grayscale(dataPtr, canvas.width, canvas.height);
-
-    // Create a copy of the Wasm memory segment to fix the type error
-    const resultData = new Uint8ClampedArray(w-module.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const dataPtr = wasmModule._malloc(data.length);
+    wasmModule.HEAPU8.set(data, dataPtr);
+    wasmModule._grayscale(dataPtr, canvas.width, canvas.height);
+    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
-
-    w-module._free(dataPtr);
+    wasmModule._free(dataPtr);
   };
 
   const applySepia = () => {
-    if (!w-module || !canvasRef.current || !originalImageData.current) return;
+    if (!wasmModule || !canvasRef.current || !originalImageData.current) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    ctx.putImageData(originalImageData.current, 0, 0); // Reset to original
+    ctx.putImageData(originalImageData.current, 0, 0);
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
-    const dataPtr = w-module._malloc(data.length);
-    w-module.HEAPU8.set(data, dataPtr);
-    w-module._sepia(dataPtr, canvas.width, canvas.height);
-    
-    // Create a copy of the Wasm memory segment to fix the type error
-    const resultData = new Uint8ClampedArray(w-module.HEAPU8.subarray(dataPtr, dataPtr + data.length));
+    const dataPtr = wasmModule._malloc(data.length);
+    wasmModule.HEAPU8.set(data, dataPtr);
+    wasmModule._sepia(dataPtr, canvas.width, canvas.height);
+    const resultData = new Uint8ClampedArray(wasmModule.HEAPU8.subarray(dataPtr, dataPtr + data.length));
     const resultImageData = new ImageData(resultData, canvas.width, canvas.height);
     ctx.putImageData(resultImageData, 0, 0);
-
-    w-module._free(dataPtr);
+    wasmModule._free(dataPtr);
   };
-
 
   return (
     <div className="p-8 bg-slate-800 rounded-lg text-white max-w-2xl mx-auto">
@@ -115,11 +105,11 @@ export default function W-editor() {
 
       {image && (
         <div className="mt-4 grid grid-cols-2 gap-4">
-          <button onClick={applyGrayscale} disabled={!w-module} className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded disabled:bg-slate-500">
-            {w-module ? 'Grayscale' : 'Loading Wasm...'}
+          <button onClick={applyGrayscale} disabled={!wasmModule} className="w-full bg-blue-600 hover:bg-blue-700 p-3 rounded disabled:bg-slate-500">
+            {wasmModule ? 'Grayscale' : 'Loading Wasm...'}
           </button>
-          <button onClick={applySepia} disabled={!w-module} className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded disabled:bg-slate-500">
-            {w-module ? 'Sepia' : 'Loading Wasm...'}
+          <button onClick={applySepia} disabled={!wasmModule} className="w-full bg-teal-600 hover:bg-teal-700 p-3 rounded disabled:bg-slate-500">
+            {wasmModule ? 'Sepia' : 'Loading Wasm...'}
           </button>
         </div>
       )}
